@@ -1,0 +1,112 @@
+#!/Users/Fabunanr/anaconda2/bin/python
+import csv
+total = 0
+import pandas as pd
+#Raw inputs
+chrom = raw_input("Which Chromosome? ")
+high = chrom + 'HI' + '.txt.thetasWindow.gz.pestPG'
+low = chrom + 'LOW' + '.txt.thetasWindow.gz.pestPG'
+ofiles = chrom + '_difference_high' + '.txt'
+offilesl = chrom + '_difference_low' + '.txt'
+print "High population with low tajima D and low population with high tajima D for " + chrom
+tajdl = raw_input("LOW Taj D Value: ")
+tajdh = raw_input("HIGH taj D value: ")
+
+hi = open(high, 'r')
+reader = csv.reader(hi, delimiter = '\t')
+headers = reader.next()
+
+lo = open(low,'r')
+readerl = csv.reader(lo, delimiter = '\t')
+headersl = readerl.next()
+# lines = r.readlines()
+of = open(ofiles, 'w')
+ofl = open(offilesl, 'w')
+
+#To use headers in file
+
+#high
+column = {}
+converters = [str.strip] + [float] * (len(headers)-1)
+for h in headers:
+    column[h] = []
+for row in reader:
+    for h, v, conv in zip(headers, row, converters):
+        column[h].append(conv(v))
+#LOW
+columnl = {}
+converters = [str.strip] + [float] * (len(headersl)-1)
+for h in headersl:
+    columnl[h] = []
+for row in readerl:
+    for h, v, conv in zip(headersl, row, converters):
+        columnl[h].append(conv(v))
+
+#Empty lists for line numbers of given true values for Tajimas D and LinesT
+#This is for column reading. I think..
+
+#high
+linesD = []
+# linesT = []
+for i,h in enumerate(column['Tajima'],0):
+    if float(h) <= float(tajdh):
+        num = i
+        linesD.append(num)
+# for i,h in enumerate(column['tW'],0):
+#     if float(h) >= float(theta):
+#         num = i
+#         linesT.append(num)
+#low
+linesDl = []
+# linesTl = []
+for i,h in enumerate(columnl['Tajima'],0):
+    if float(h) >= float(tajdl):
+        num = i
+        linesDl.append(num)
+# for i,h in enumerate(column['tW'],0):
+#     if float(h) >= float(theta):
+#         num = i
+#         linesTl.append(num)
+
+#Find if both are true
+
+# # high
+# sD = set(linesD)
+# sT = set(linesT)
+# tl = sD.intersection(sT)
+
+# #LOW
+# sDl = set(linesD)
+# sTl = set(linesT)
+# tll = sD.intersection(sT)
+
+# #intersection of high and LOW
+# hvsl = tll.intersection(tl)
+dh = set(linesD)
+dl = set(linesDl)
+iner = dh.intersection(dl)
+
+
+#Need to add 1 to each element in intersection because the above function did it without the header
+tll = [x+1 for x in iner]
+hi.close()
+lo.close()
+
+# This is to print out the actual lines
+g = "#(indexStart,indexStop)(firstPos_withData,lastPos_withData)(WinStart,WinStop)	Chr	WinCenter	tW	tP	tF	tH	tL	Tajima	fuf	fud	fayh	zeng	nSites \n"
+with open(high) as r:
+    n = 0
+    of.write(g)
+    for line in r:
+        if n in sorted(tll):
+            of.write(line)
+        n+=1
+    r.close()
+with open(low) as q:
+    m = 0
+    ofl.write(g)
+    for line in q:
+        if m in sorted(tll):
+            ofl.write(line)
+        m+=1
+q.close()
